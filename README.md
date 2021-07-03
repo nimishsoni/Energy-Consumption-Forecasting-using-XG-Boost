@@ -11,7 +11,24 @@ This work is part of Udacity Data Science Nanodegree project requirement. Since 
 
 ## Files
 Energy Consumption Forecasting.ipynb
-Contains code for Analyzing and forecasting Hourly Energy consumption using PJM East dataset (PJME_hourly.csv). PJME_hourly.csv contains hourly energy consumption data from 2002-2018 July. 
+Contains code for Analyzing and forecasting Hourly Energy consumption using PJM East dataset (PJME_hourly.csv). 
+PJME_hourly.csv 
+Contains hourly energy consumption data from 2002-2018 July. 
+
+## Key Results:
+### Analytics:
+PJM Energy consumption Load does not show increasing or decreasing trend from 2002-2018. 
+The demand seems to be stagnant overall with Yearly average energy consumption in 30000-330000 MW range.
+The minimum and maximum hourly energy demand show large variation based on time of day and season with minimum record being 14544 MW and maximum being 62009 MW.
+The energy consumption trend shows demand peaking in Months Jun-Sep and again a smaller peak in Dec-Feb.
+
+### Forecasting
+Used create_features function to add following additional feature set
+- Timestamp modified features: Hour, Day, Week, month, quarter
+- Lag Features
+- Rolling Window Features
+Divided the dataset in to train (Up to 2014) and test (2015 onwards)
+Used XGBoost algorithm for forecasting with MAPE = 0.58%
 
 ## Author
 Nimish Soni
