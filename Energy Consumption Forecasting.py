@@ -5,11 +5,16 @@
 # PJM Interconnection LLC (PJM) is a regional transmission organization (RTO) in the United States. The hourly energy consumption data is available on PJM's website. The data set is also available part of Kaggle competition on Hourly Energy Consumption. This project first analyzes the energy consumption data of PJM East region (2001-2018) and than applies XGBoost forecasting algorithm.
 
 # # Business Understanding
+# Following queries are addressed through this work. 
+# ## Energy Analytics
 # ### Question 1: What is the trend of energy consumption at PJM East over the years from 2002 - 2018?
-# ### Question 2: What is the typical trend of energy consumption at PJM East over a year?
-# ### Question 3: How acurately XGBoost can forecast the energy consumption and what are the significant features influencing the forecasting performance?
+# ### Question 2: What is the typical trend of energy consumption at PJM East over months in a year?
+# ### Question 3: What is the variation in energy consumption at PJM East through out a day?
+# ## Energy Forecasting
+# ### Question 4: What are the significant features influencing the forecasting performance?
+# ### Question 5: How acurately XGBoost can forecast the energy consumption ?
 
-# In[1]:
+# In[3]:
 
 
 #Import Python Libraries
@@ -25,7 +30,7 @@ plt.style.use('fivethirtyeight')
 
 # ## Data Understanding
 
-# In[2]:
+# In[4]:
 
 
 #Read in PJM Hourly Power Consumption data file to dataframe df
@@ -35,7 +40,7 @@ pjme_energy: object = pd.read_csv('PJME_hourly.csv')
 # ## Assess and Explore Data
 # The dataset has no null values, and is preprocessed already. The Leap year show higher value logs compared to Other years since there is additional day. 2018 shows lower value since the data is unavailable beyond July
 
-# In[3]:
+# In[5]:
 
 
 # Check number of Columns and Rows
@@ -45,28 +50,28 @@ num_cols = pjme_energy.shape[1] #Provide the number of columns in the dataset
 print(num_rows, num_cols) 
 
 
-# In[4]:
+# In[6]:
 
 
 #Check the Data
 print(pjme_energy.tail())
 
 
-# In[5]:
+# In[7]:
 
 
 #Converting Datetime column to datetime %Y-%m-%d %H:%M:%S format
 pjme_energy['Datetime'] = pd.to_datetime(pjme_energy.Datetime, format='%Y-%m-%d %H:%M:%S')
 
 
-# In[6]:
+# In[8]:
 
 
 #Checking Null values
 pjme_energy.isna().sum()
 
 
-# In[7]:
+# In[9]:
 
 
 # Check Total Value Count for Each Year
@@ -74,7 +79,7 @@ Yearly_Value_Counts = pjme_energy['Datetime'].dt.year.value_counts(sort=False)
 print(Yearly_Value_Counts)
 
 
-# In[8]:
+# In[10]:
 
 
 #Statistics Describing PJME Power Consumption
@@ -82,7 +87,7 @@ pjme_statistics = pjme_energy['PJME_MW'].describe().T
 print(pjme_statistics)
 
 
-# In[9]:
+# In[11]:
 
 
 # Adding Hour of Day and Month of Year Columns to the Dataframe
@@ -90,28 +95,28 @@ pjme_energy['hour'] = pjme_energy.Datetime.dt.hour
 pjme_energy['month'] = pjme_energy.Datetime.dt.month
 
 
-# In[10]:
+# In[12]:
 
 
 # Calculate Year-wise Energy Consumption Mean and Std deviation
 pjme_energy.groupby(pd.Grouper(key='Datetime', freq='Y')).agg({'PJME_MW': ['mean', 'std']})
 
 
-# In[11]:
+# In[13]:
 
 
 # Calculate Month-wise Energy Consumption Mean and Std deviation
 pjme_energy.groupby(['month']).agg({'PJME_MW': ['mean', 'std']})
 
 
-# In[12]:
+# In[14]:
 
 
 # Calculate Hour-wise Energy Consumption Mean and Std deviation
 pjme_energy.groupby(['hour']).agg({'PJME_MW': ['mean', 'std']})
 
 
-# In[13]:
+# In[15]:
 
 
 #Histogram of Power Consumption for PJME
@@ -120,7 +125,10 @@ pjme_energy['PJME_MW'].plot.hist(figsize=(15, 5), bins=200, title='Distribution 
 
 # ## Visualize Data
 
-# In[14]:
+# ### Question 1: What is the trend of energy consumption at PJM East over the years from 2002 - 2018?
+# Answer: PJM Energy consumption Load does not show increasing or decreasing trend from 2002-2018. The demand seems to be stagnant overall with Yearly average energy consumption in 30000-330000 MW range.
+
+# In[16]:
 
 
 # PJME Power Consumption Trend Chart
@@ -131,10 +139,12 @@ pjme_energy[['PJME_MW', 'Datetime']].plot(x='Datetime',
                                           title='PJM Load from 2002-2018')
 
 
-# ### Question 1: What is the trend of energy consumption at PJM East over the years from 2002 - 2018?
-# Answer: PJM Energy consumption Load does not show increasing or decreasing trend from 2002-2018. The demand seems to be stagnant overall with Yearly average energy consumption in 30000-330000 MW range.
+# ### Question 2: What is the typical trend of energy consumption at PJM East over months in a year?
+# Answer: The energy consumption trend shows demand peaking in Months Jun-Sep and again a smaller peak in Dec-Feb.
+# ### Question 3: What is the variation in energy consumption at PJM East through out a day?
+# Answer: The energy consumption is higher during afternoon-evening hours from 2PM - 7PM after which it starts to decrease. Expectedly, the energy consumption is the lowest during night hours 1AM-6AM
 
-# In[15]:
+# In[17]:
 
 
 # PJM Power Consumption Box Plot by Hour of Day
@@ -150,12 +160,11 @@ ax.set_title('PJM Power Consumption by Month')
 ax.set_ylim(0, 65000)
 
 
-# ### Question 2: What is the typical trend of energy consumption at PJM East over a year?
-# The energy consumption trend shows demand peaking in Months Jun-Sep and again a smaller peak in Dec-Feb. 
+# 
 
 # ## Forecasting using XGBoost
 
-# In[16]:
+# In[18]:
 
 
 # Split PJME Energy Conumption Dataset to Train and Test 
@@ -164,7 +173,7 @@ pjme_energy_train = pjme_energy.loc[pjme_energy.Datetime <= SPLIT_DATE].copy()
 pjme_energy_test = pjme_energy.loc[pjme_energy.Datetime > SPLIT_DATE].copy()
 
 
-# In[17]:
+# In[19]:
 
 
 # Plot PJME Energy Conumption Train and Test Datasets
@@ -182,7 +191,7 @@ pjme_energy_test[['PJME_MW', 'Datetime']].plot(x='Datetime',
 
 # ## Data Modeling
 
-# In[18]:
+# In[20]:
 
 
 # Function to create features 
@@ -240,7 +249,7 @@ def create_features(energy_data, label=None):
     return features
 
 
-# In[19]:
+# In[21]:
 
 
 # Create feature set for train and test dataset
@@ -248,7 +257,7 @@ pjme_features_train, pjme_label_train = create_features(pjme_energy_train, label
 pjme_features_test, pjme_label_test = create_features(pjme_energy_test, label='PJME_MW')
 
 
-# In[20]:
+# In[22]:
 
 
 #Fit XGB model on the Energy Consumption Dataset
@@ -262,14 +271,17 @@ energy_forecasting_model.fit(pjme_features_train, pjme_label_train,
 
 # ## Evaluate the Results
 
-# In[21]:
+# ### Question 4: What are the significant features influencing the forecasting performance?
+# Answer: Feature importance plot below shows significant features for forecasting. Lag features of (2 Hour Lag, 24 and 4 Hour lag) are most important alongwith Hour (or time) of day and 4 Hour rolling window statistical variables of mean, standard deviation, Max and min values in that order. 
+
+# In[23]:
 
 
 #Plot Top 15 features by Significance for forecasting
 _ = plot_importance(energy_forecasting_model, height=0.9, max_num_features=15)
 
 
-# In[22]:
+# In[24]:
 
 
 # Predict Energy consumption for 2015-2018 using trained XGB model and set of features used earlier
@@ -277,14 +289,17 @@ pjme_energy_test['MW_Prediction'] = energy_forecasting_model.predict(pjme_featur
 df_all = pd.concat([pjme_energy_test, pjme_energy_train], sort=False)
 
 
-# In[23]:
+# ### Question 5: How acurately XGBoost can forecast the energy consumption and what are the significant features influencing the forecasting performance?
+# Answer: The results show XGBoost accurately predicting energy consumption with 0.5% MAPE. Feature importance plot shows significant features for forecasting.
+
+# In[25]:
 
 
 # Plot original and Model-Predicted energy consumption Output for PJME
 _ = df_all[['PJME_MW', 'MW_Prediction']].plot(figsize=(15, 5))
 
 
-# In[24]:
+# In[26]:
 
 
 # Calculate MSE, MAE and MAPE for Predicted output to quantify model error
@@ -304,6 +319,3 @@ mape = mean_absolute_percentage_error(y_true=pjme_energy_test['PJME_MW'],
                                       y_pred=pjme_energy_test['MW_Prediction'])
 print(mse,mae,mape)
 
-
-# ### Question 3: How acurately XGBoost can forecast the energy consumption and what are the significant features influencing the forecasting performance?
-# The results show XGBoost accurately predicting energy consumption with 0.5% MAPE. Feature importance plot shows significant features for forecasting.
