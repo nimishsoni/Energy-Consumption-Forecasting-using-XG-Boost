@@ -289,8 +289,8 @@ pjme_energy_test['MW_Prediction'] = energy_forecasting_model.predict(pjme_featur
 df_all = pd.concat([pjme_energy_test, pjme_energy_train], sort=False)
 
 
-# ### Question 5: How acurately XGBoost can forecast the energy consumption and what are the significant features influencing the forecasting performance?
-# Answer: The results show XGBoost accurately predicting energy consumption with 0.5% MAPE. Feature importance plot shows significant features for forecasting.
+# ### Question 5: How acurately XGBoost can forecast the energy consumption?
+# Answer: The results show XGBoost accurately predicting energy consumption with 0.5% MAPE.
 
 # In[25]:
 
